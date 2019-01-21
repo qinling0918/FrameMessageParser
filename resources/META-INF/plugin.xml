@@ -1,0 +1,39 @@
+<idea-plugin>
+  <id>com.tsinling.plugin.id</id>
+  <name>Frame Message Parser</name>
+  <version>1.0</version>
+  <vendor email="qinling0918@163.com" url="https://github.com/qinling0918">Tsinling</vendor>
+
+  <description><![CDATA[
+      帧报文解析工具.<br>
+      <em>most HTML tags may be used</em>
+    ]]></description>
+
+  <change-notes><![CDATA[
+      Add change notes here.<br>
+      <em>most HTML tags may be used</em>
+    ]]>
+  </change-notes>
+
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+  <idea-version since-build="173.0"/>
+
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+       on how to target different products -->
+  <!-- uncomment to enable plugin in all products
+  <depends>com.intellij.modules.lang</depends>
+  -->
+
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- Add your extensions here -->
+  </extensions>
+
+  <actions>
+    <!-- Add your actions here -->
+    <action id="com.tsinling.ParserActionID" class="com.sgcc.pda.plugin.ParserAction" text="Parser">
+      <add-to-group group-id="HelpMenu" anchor="last"/>
+      <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt 0"/>
+    </action>
+  </actions>
+
+</idea-plugin>
