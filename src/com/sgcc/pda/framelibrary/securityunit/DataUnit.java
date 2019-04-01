@@ -3,6 +3,8 @@ package com.sgcc.pda.framelibrary.securityunit;
 
 import org.jf.util.SparseArray;
 
+import java.util.HashMap;
+
 /**
  *  数据单元
  */
@@ -12,7 +14,6 @@ public class DataUnit {
     public String dataName; // 数据名称
     public String dataInstructions; // 数据释义
     public String datatype; // 数据格式
-
 
     public DataUnit(int byteSize, String dataName, String dataInstructions, String datatype) {
         this.byteSize = byteSize;

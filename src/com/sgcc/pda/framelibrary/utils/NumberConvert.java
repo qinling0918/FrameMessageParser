@@ -1,5 +1,6 @@
 package com.sgcc.pda.framelibrary.utils;
 
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringDef;
 
@@ -28,6 +29,16 @@ public final class NumberConvert {
     public static final String yyyyMMdd = "yyyyMMdd";
     public static final String HHmmss = "HHmmss";
 
+
+    @StringDef({HEX, BINARY, OCTAL,DECIMAL})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Radix {
+    }
+
+    public static final String HEX = "x";
+    public static final String BINARY = "b";
+    public static final String OCTAL = "o";
+    public static final String DECIMAL = "d";
     /**
      * 是否是 16进制字符串
      *
@@ -90,7 +101,118 @@ public final class NumberConvert {
         }
         return hexStr;
     }
+    private static void formatNum(int a, int shift,@Radix String radix) {
+        StringBuilder builder = new StringBuilder("%0");
+        builder.append(shift).append(radix).toString();
+        System.out.println(String.format(builder.toString(), a));
+    }
 
+    public static Integer parseInt(String codeStr) {
+        return parseInt(codeStr,10,null);
+    }
+
+    public static Integer parseInt(String codeStr, Integer defaultValue) {
+        return parseInt(codeStr,10,defaultValue);
+    }
+    public static Integer parseInt(String codeStr, int radix, Integer defaultValue) {
+        try{
+            return  Integer.parseInt(codeStr,radix);
+        }catch (NumberFormatException e){
+            return defaultValue;
+        }
+    }
+
+    public static int parseUnsignedInt(String s, int radix)
+            throws NumberFormatException {
+        if (s == null)  {
+            throw new NumberFormatException("null");
+        }
+
+        int len = s.length();
+        if (len > 0) {
+            char firstChar = s.charAt(0);
+            if (firstChar == '-') {
+                throw new
+                        NumberFormatException(String.format("Illegal leading minus sign " +
+                        "on unsigned string %s.", s));
+            } else {
+                if (len <= 5 || // Integer.MAX_VALUE in Character.MAX_RADIX is 6 digits
+                        (radix == 10 && len <= 9) ) { // Integer.MAX_VALUE in base 10 is 10 digits
+                    return parseInt(s, radix);
+                } else {
+                    long ell = Long.parseLong(s, radix);
+                    if ((ell & 0xffff_ffff_0000_0000L) == 0) {
+                        return (int) ell;
+                    } else {
+                        throw new
+                                NumberFormatException(String.format("String value %s exceeds " +
+                                "range of unsigned int.", s));
+                    }
+                }
+            }
+        } else {
+            throw new NumberFormatException("For input string: \"" + s + "\"");
+        }
+    }
+
+
+    public static long parseUnsignedLong(String s, int radix)
+            throws NumberFormatException {
+        if (s == null) {
+            throw new NumberFormatException("null");
+        }
+
+        int len = s.length();
+        if (len > 0) {
+            char firstChar = s.charAt(0);
+            if (firstChar == '-') {
+                throw new
+                        NumberFormatException(String.format("Illegal leading minus sign " +
+                        "on unsigned string %s.", s));
+            } else {
+                if (len <= 12 || // Long.MAX_VALUE in Character.MAX_RADIX is 13 digits
+                        (radix == 10 && len <= 18)) { // Long.MAX_VALUE in base 10 is 19 digits
+                    return Long.parseLong(s, radix);
+                }
+
+                // No need for range checks on len due to testing above.
+                long first = Long.parseLong(s.substring(0, len - 1), radix);
+                int second = Character.digit(s.charAt(len - 1), radix);
+                if (second < 0) {
+                    throw new NumberFormatException("Bad digit at end of " + s);
+                }
+                long result = first * radix + second;
+                if (compareUnsigned(result, first) < 0) {
+
+                    throw new NumberFormatException(String.format("String value %s exceeds " +
+                            "range of unsigned long.", s));
+                }
+                return result;
+            }
+        } else {
+            throw new NumberFormatException("For input string: \"" + s + "\"");
+        }
+
+    }
+    public static int compare(long x, long y){
+        return (x < y) ? -1 : ((x == y) ? 0 : 1);
+    }
+
+    /**
+     * Compares two {@code long} values numerically treating the values
+     * as unsigned.
+     *
+     * @param  x the first {@code long} to compare
+     * @param  y the second {@code long} to compare
+     * @return the value {@code 0} if {@code x == y}; a value less
+     *         than {@code 0} if {@code x < y} as unsigned values; and
+     *         a value greater than {@code 0} if {@code x > y} as
+     *         unsigned values
+     * @since 1.8
+     */
+    public static int compareUnsigned ( long x, long y){
+        return compare(x + Long.MIN_VALUE, y + Long.MIN_VALUE);
+    }
     /**
      * 将十六进制的字符串转换成二进制的字符串
      *
@@ -162,26 +284,20 @@ public final class NumberConvert {
 
         return sbs.toString().toUpperCase(Locale.CHINA);
     }
-    /*    *//***
-     *  从尾部截取 规定长度的 字符串
-     *  若原字符串长度不够则补0
-     * @param num
-     * @param strLength
-     * @return
-     *//*
-    public static String subStringRight2Left(int num, int strLength) {
-        String str = Integer.toBinaryString(num);
-        int len = str.length();
-        return  str.substring(str,strLength);
-    }*/
 
+
+    public static String toBinary(int num, int digits) {
+        String cover = Integer.toBinaryString(1 << digits).substring(1);
+        String s = Integer.toBinaryString(num);
+        return s.length() < digits ? cover.substring(s.length()) + s : s;
+    }
     /***
      *  10进制 转成2进制字符串  并且有位数,不够则补零
      * @param num
      * @param strLength
      * @return
      */
-    public static String toBinaryStrWithAddZero(int num, int strLength) {
+    public static String toBinaryStr(int num, int strLength) {
         String str = Integer.toBinaryString(num);
         return addZeroToStringLeft(str, strLength);
 
@@ -191,13 +307,15 @@ public final class NumberConvert {
         return String.format(Locale.CHINA,formater,abcDec);*/
     }
 
+
+
     /***
      *  10进制 转成16进制字符串  并且有位数,不够则补零
      * @param num
      * @param strLength
      * @return
      */
-    public static String toHexStrWithAddZero(int num, int strLength) {
+    public static String toHexStr(int num, int strLength) {
         String str = Integer.toHexString(num).toUpperCase(Locale.CHINA);
         if (num < 0) {
             int len = str.length();
@@ -275,13 +393,13 @@ public final class NumberConvert {
     }
     @NonNull
     private static String getTimeHexString(@TimeFormater String formater, Calendar calendar) {
-        String yearHexStr = toHexStrWithAddZero(calendar.get(Calendar.YEAR), 4);
-        String monthHexStr = toHexStrWithAddZero(calendar.get(Calendar.MONTH) + 1, 2);
-        String dayOfMonthHexStr = toHexStrWithAddZero(calendar.get(Calendar.DAY_OF_MONTH), 2);
-        String hourOfDayHexStr = toHexStrWithAddZero(calendar.get(Calendar.HOUR_OF_DAY), 2);
-        String minuteHexStr = toHexStrWithAddZero(calendar.get(Calendar.MINUTE), 2);
-        String secondHexStr = toHexStrWithAddZero(calendar.get(Calendar.SECOND), 2);
-        //String milliSecondHexStr = toHexStrWithAddZero(calendar.get(Calendar.MILLISECOND), 4);
+        String yearHexStr = toHexStr(calendar.get(Calendar.YEAR), 4);
+        String monthHexStr = toHexStr(calendar.get(Calendar.MONTH) + 1, 2);
+        String dayOfMonthHexStr = toHexStr(calendar.get(Calendar.DAY_OF_MONTH), 2);
+        String hourOfDayHexStr = toHexStr(calendar.get(Calendar.HOUR_OF_DAY), 2);
+        String minuteHexStr = toHexStr(calendar.get(Calendar.MINUTE), 2);
+        String secondHexStr = toHexStr(calendar.get(Calendar.SECOND), 2);
+        //String milliSecondHexStr = toHexStr(calendar.get(Calendar.MILLISECOND), 4);
         String timeHexStr = String.format(Locale.CHINA, "%s%s%s%s%s%s",
                 yearHexStr, monthHexStr, dayOfMonthHexStr, hourOfDayHexStr, minuteHexStr, secondHexStr);
         int len = timeHexStr.length();
@@ -304,7 +422,7 @@ public final class NumberConvert {
      * @param strLength 期望字符串长度.
      * @return
      */
-    private static String addZeroToStringLeft(String str, int strLength) {
+    public static String addZeroToStringLeft(String str, int strLength) {
         return addZeroToString(str, strLength, true);
     }
 
@@ -557,7 +675,7 @@ public final class NumberConvert {
         StringBuffer stringBuffer = new StringBuffer();
         if (objs != null && objs.length != 0) {
             int len = objs.length;
-            stringBuffer.append(NumberConvert.toHexStrWithAddZero(len, 2));
+            stringBuffer.append(NumberConvert.toHexStr(len, 2));
             for (int i = 0; i < len; i++) {
                 stringBuffer.append(objs[i].toString());
             }
@@ -583,7 +701,7 @@ public final class NumberConvert {
             return "";
         }
         for (int i = fromIndex; i < fromIndex + len; i++) {
-            stringBuilder.append(toBinaryStrWithAddZero(bytes[i] & 0xff, 8));
+            stringBuilder.append(toBinaryStr(bytes[i] & 0xff, 8));
         }
         return stringBuilder.toString().toUpperCase(Locale.CHINA);
     }

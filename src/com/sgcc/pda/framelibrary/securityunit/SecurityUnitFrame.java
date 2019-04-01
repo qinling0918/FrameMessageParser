@@ -190,7 +190,7 @@ public class SecurityUnitFrame implements Cloneable, IFrame {
                 return "FFFF";
                 //throw new IndexOutOfBoundsException("超出了协议目前现有的长度 (2^14) (16383) (3FFFH)");
             }
-            String lenStr = NumberConvert.toHexStrWithAddZero(length, 4);
+            String lenStr = NumberConvert.toHexStr(length, 4);
             return lenStr;//NumberConvert.hexStrReverse(lenStr,0,lenStr.length());
         }
     }
@@ -311,7 +311,7 @@ public class SecurityUnitFrame implements Cloneable, IFrame {
             if (len < frameMinLen || len % 2 != 0) return ERROR_STRING_LENGTH;
             if (!(frameString.substring(0, 2).equalsIgnoreCase("E9") && frameString.substring(len - 2, len).equalsIgnoreCase("E6")))
                 return ERROR_FRAME_HEAD_TAIL_CODE;
-            if (!frameString.substring(2, 6).equalsIgnoreCase(NumberConvert.toHexStrWithAddZero((len - 10) / 2, 4)))
+            if (!frameString.substring(2, 6).equalsIgnoreCase(NumberConvert.toHexStr((len - 10) / 2, 4)))
                 return ERROR_FRAME_LENGTH_CODE;
             // System.out.println("cs  "+NumberConvert.getCs(frameString.substring(0, len - 4))+  "      ");
             if (!(frameString.substring(len - 4, len - 2).equalsIgnoreCase(NumberConvert.getCs(frameString.substring(0, len - 4)))))

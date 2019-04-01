@@ -1,6 +1,10 @@
 package com.sgcc.pda.framelibrary.utils;
 
 import com.sgcc.pda.framelibrary.protocol698.Frame698;
+import com.sgcc.pda.framelibrary.protocol698.apdu.data.OAD;
+import com.sgcc.pda.framelibrary.protocol698.apdu.data.PIID;
+import com.sgcc.pda.framelibrary.protocol698.apdu.data.ScalerUnit;
+import com.sgcc.pda.framelibrary.protocol698.apdu.data.Unit;
 import com.sgcc.pda.framelibrary.securityunit.DataUnit;
 import com.sgcc.pda.framelibrary.securityunit.SecurityUnitFrame;
 import com.sgcc.pda.framelibrary.securityunit.format.Cammand;
@@ -65,18 +69,89 @@ public class StringToHex {
 
 
 
+    public static int getMaskedValue(String hexString, int mask)  {
+        OAD oad = new OAD("00000000");
+        System.out.println(oad.hashCode());
+        try {
+            return Integer.parseInt(hexString, 16) & mask;
+        } catch (Exception ex) {
+            return 0;
+        }
 
+
+    }
+
+    public static void getMaskedValue()  {
+        OAD oad = new OAD("00000000");
+        System.out.println(oad.hashCode());
+
+
+    }
     //504F533838383834  POS88884
     public static void main(String[] args) {
-     //   System.out.println(Byte.parseByte("g",37));
+
+       // OAD oad = new OAD("00000000");
+        getMaskedValue();
+        getMaskedValue();
+       // System.out.println(getMaskedValue("81",0X80));
+       // System.out.println(getMaskedValue("01",0X7F));
+       // System.out.println(String.format("%08x",12+(0x02<<24)));
+       // System.out.println(String.format("%08x",12+(0x01<<24)));
+
+
+      /*   try {
+
+
+        }
+          //  ObjectInputStream inputStream =ObjectInputStream);
+         /*   ObjectOutputStream out=null;
+            File file=new File("b.txt");
+            out=new ObjectOutputStream(new FileOutputStream(file));
+           // List<String>list=new ArrayList<String>();
+            //list.add(new String("12"));
+            //list.add(new String("23"));
+            out.writeChar('E');
+            out.writeChar('E');
+
+
+            ObjectInputStream in=null;
+            in=new ObjectInputStream(new FileInputStream(file));
+            List<String> res=(List<String>) in.readObject();
+            for(String p:res){
+                System.out.println(p);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }*/
+
+        //   System.out.println(Byte.parseByte("g",37));
     //    System.out.println(Byte.toUnsignedInt((byte) 0xff));
       //  System.out.println(Long.toUnsignedString(0XFFFFFFFFFFFFFFFFL));
 
-        int a = 123456;
-        System.out.println(a*(Math.pow(10,-2)));
-        String data = "68 35 00 43 05 01 00 00 00 00 00 00 0F AF 05 03 00 50 04 02 00 01 20 21 02 00 1C 1C 07 E0 01 14 00 00 00 03 00 20 21 02 00 00 20 21 02 00 00 00 10 02 00 00 FD 5B 16";
+      //  System.out.println(Unit.getInstance().getUnit(13));
+   // ArrayList<Unit> unitList = new ArrayList<>();
 
-        System.out.println(data.replaceAll(" ",""));
+
+       //  System.out.println(toBinary(-3,16));
+        // System.out.println(Integer.toBinaryString(-3));
+      //   System.out.println();
+
+       //  System.out.println(Integer.parseInt(toBinary(-3,16).substring(1),2));
+        //formatHex(a, 16);
+       /* System.out.println(System.currentTimeMillis());
+        System.out.println(toHex(a,16));
+        System.out.println(System.currentTimeMillis());
+        System.out.println(formatHex(a,16));
+        System.out.println(System.currentTimeMillis());
+        System.out.println(NumberConvert.toHexStrWithAddZero(a,16));
+        System.out.println(System.currentTimeMillis());*/
+
+
+       // String data = "68 35 00 43 05 01 00 00 00 00 00 00 0F AF 05 03 00 50 04 02 00 01 20 21 02 00 1C 1C 07 E0 01 14 00 00 00 03 00 20 21 02 00 00 20 21 02 00 00 00 10 02 00 00 FD 5B 16";
+
+       // System.out.println(data.replaceAll(" ",""));
 
        /* String taskData = "010300290503035004020002202102001C07E301050000001C07E3010600000000020020210200000010020000616F5090#010300290503035004020002202102001C07E301040000001C07E3010500000000020020210200000010020000116CFBEE#010300290503035004020002202102001C07E301030000001C07E30104000000000200202102000000100200005617AE1D*010300290503035004020002202102001C07E301050000001C07E3010600000000020020210200000020020000A5049056#010300290503035004020002202102001C07E301040000001C07E30105000000000200202102000000200200008DF6E3CE#010300290503035004020002202102001C07E301030000001C07E3010400000000020020210200000020020000DC859AFB";
         //       // String[] tasks = a.split("\\*");
@@ -177,6 +252,32 @@ public class StringToHex {
        // System.out.println(new SecurityUnitFrame().format(string));
         System.out.println("Hex : " + new SecurityUnitFrameFormat(string.replaceAll(" ","").trim()).format());*/
     }
+    public static String toBinary(int num, int digits) {
+        String cover = Integer.toBinaryString(1 << digits).substring(1);
+        String s = Integer.toBinaryString(num);
+        return s.length() < digits ? cover.substring(s.length()) + s : s;
+    }
+/*
+    public static String toHex(int num, int digits) {
+        System.out.println(1 << digits);
+        System.out.println(Integer.toBinaryString(1 << digits));
+        String cover = Integer.toBinaryString(1 << digits).substring(1);
+        System.out.println(cover);
+        String s = Integer.toHexString(num);
+        return s.length() < digits ? cover.substring(s.length()) + s : s;
+    }*/
+
+    private static String formatHex(int a, int digits) {
+        StringBuilder builder = new StringBuilder("%0");
+        builder.append(digits).append("x");
+        return String.format(builder.toString(), a);
+    }
+ /*   private static void formatHex(int a, int shift) {
+        StringBuilder builder = new StringBuilder("%0");
+        builder.append(shift).append("o").toString();
+        System.out.println(String.format(builder.toString(), a));
+    }*/
+
 
     private static String getTimeFromTaskData(String time) {
         String timeHex = time.substring(34,48);

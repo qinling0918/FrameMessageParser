@@ -295,7 +295,7 @@ public class Frame698Separator {
                 Frame698.Parser parser = getParser(key);
                 // 结束帧 的序号
                 if (parser != null && parser.getFrameSeparateStatus() == 0b01) {
-                    frameSize = parser.getFrameSeparateNumber();
+                    frameSize = parser.getFrameSeparateNumber()+1;
                     break;
                 }
             }

@@ -19,7 +19,7 @@ import java.util.Locale;
  * Created by qinling on 2018/5/8 8:53
  * Description:
  */
-//TODO : 分帧部分未实现
+//TODO : 分帧部分参见 Frame698Separator
 public class Frame698 implements Cloneable, IFrame {
 
     @IntDef({FUNCTION_CODE_1_LINK_MANAGER, FUNCTION_CODE_3_USER_DATA,})
@@ -298,11 +298,13 @@ public class Frame698 implements Cloneable, IFrame {
 
         public Builder setFrameSeparateNumber(@IntRange(from = 0, to = 4095) int frameSeparateNumber) {
             this.frameSeparateNumber = frameSeparateNumber;
+            setFrameSeparate(true);
             return this;
         }
 
         public Builder setFrameSeparateStatus(@IntRange(from = 0, to = 3) int frameSeparateStatus) {
             this.frameSeparateStatus = frameSeparateStatus;
+            setFrameSeparate(true);
             return this;
         }
 
@@ -369,12 +371,13 @@ public class Frame698 implements Cloneable, IFrame {
         private String getFrameSeparate(String linkDataString) {
 
             StringBuffer stringBuffer = new StringBuffer();
-            stringBuffer.append(NumberConvert.toBinaryStrWithAddZero(frameSeparateStatus, 2))
+            stringBuffer.append(NumberConvert.toBinaryStr(frameSeparateStatus, 2))
                     .append("00")
-                    .append(NumberConvert.toBinaryStrWithAddZero(frameSeparateNumber, 12));
-            String frameSeparate = NumberConvert.toHexStrWithAddZero(
+                    .append(NumberConvert.toBinaryStr(frameSeparateNumber, 12));
+            String frameSeparate = NumberConvert.toHexStr(
                     Integer.parseInt(stringBuffer.toString(), 2), 4);
-
+            // 疑似需要高低位反转
+            frameSeparate = NumberConvert.hexStrReverse(frameSeparate);
             linkDataString = frameSeparateStatus == 0b10  //分帧传输确认帧
                     ? frameSeparate : frameSeparate + linkDataString;
             /**
@@ -439,7 +442,7 @@ public class Frame698 implements Cloneable, IFrame {
                 return "FFFF";
                 //throw new IndexOutOfBoundsException("超出了协议目前现有的长度 (2^14) (16383) (3FFFH)");
             }
-            String lenStr = NumberConvert.toHexStrWithAddZero(length, 4);
+            String lenStr = NumberConvert.toHexStr(length, 4);
             return NumberConvert.hexStrReverse(lenStr, 0, lenStr.length());
         }
 
@@ -456,11 +459,11 @@ public class Frame698 implements Cloneable, IFrame {
             int sc = isScrambling ? 1 : 0;
             // 功能码 1：链路管理，3：用户数据
             StringBuffer stringBuffer = new StringBuffer();
-            stringBuffer.append(NumberConvert.toBinaryStrWithAddZero(dir_prm, 2))
+            stringBuffer.append(NumberConvert.toBinaryStr(dir_prm, 2))
                     .append(frameSeparateFlag)
                     .append(0)
                     .append(sc)
-                    .append(NumberConvert.toBinaryStrWithAddZero(functionCode, 3));
+                    .append(NumberConvert.toBinaryStr(functionCode, 3));
 
             return NumberConvert.binaryStrToHexStr(stringBuffer.toString()).toUpperCase(Locale.CHINA);
 
@@ -478,7 +481,7 @@ public class Frame698 implements Cloneable, IFrame {
             stringBuffer
                     .append(getAddressFirstByte(serverAddressType, logicAddress, serverAddress))
                     .append(NumberConvert.hexStrReverse(serverAddress, 0, serverAddress.length()))
-                    .append(NumberConvert.toHexStrWithAddZero(clientAddress, 2));
+                    .append(NumberConvert.toHexStr(clientAddress, 2));
             return stringBuffer.toString().toUpperCase(Locale.CHINA);
         }
 
@@ -491,9 +494,9 @@ public class Frame698 implements Cloneable, IFrame {
          * @return SA 的第一个字节
          */
         private String getAddressFirstByte(int serverAddressType, int logicAddress, String serverAddress) {
-            String binStr = NumberConvert.toBinaryStrWithAddZero(serverAddressType, 2)
-                    + (NumberConvert.toBinaryStrWithAddZero(logicAddress, 2))
-                    + (NumberConvert.toBinaryStrWithAddZero(serverAddress.length() / 2 - 1, 4));
+            String binStr = NumberConvert.toBinaryStr(serverAddressType, 2)
+                    + (NumberConvert.toBinaryStr(logicAddress, 2))
+                    + (NumberConvert.toBinaryStr(serverAddress.length() / 2 - 1, 4));
 
             return NumberConvert.binaryStrToHexStr(binStr).toUpperCase(Locale.CHINA);
         }
@@ -646,7 +649,7 @@ public class Frame698 implements Cloneable, IFrame {
             if ((!frame698Str.substring(0, 2).equalsIgnoreCase("68") || !frame698Str.substring(len - 2, len).equalsIgnoreCase("16")))
                 return -3;
 
-            if (!getLengthStr(frame698Str).equalsIgnoreCase(NumberConvert.toHexStrWithAddZero((len - 4) / 2, 4)))
+            if (!getLengthStr(frame698Str).equalsIgnoreCase(NumberConvert.toHexStr((len - 4) / 2, 4)))
                 return -4;  //去除头尾字符两个字节长度
 
             // 地址域第一个字节是帧的 第5字节  即 8 + （服务地址长度字节数（serverAddressLength+1））*2  +客户端长度 2
@@ -684,7 +687,7 @@ public class Frame698 implements Cloneable, IFrame {
         }
 
         private String getAddressFirstByteBinaryStr(String frame698Str) {
-            return NumberConvert.toBinaryStrWithAddZero(Integer.parseInt(getAddressFirstByteStr(frame698Str), 16), 8);
+            return NumberConvert.toBinaryStr(Integer.parseInt(getAddressFirstByteStr(frame698Str), 16), 8);
         }
 
         private int getServerAddressLength(String frame698Str) {
@@ -724,13 +727,13 @@ public class Frame698 implements Cloneable, IFrame {
         }
 
         private String getControlBinaryStr() {
-            return NumberConvert.toBinaryStrWithAddZero(Integer.parseInt(getControl(), 16), 8);
+            return NumberConvert.toBinaryStr(Integer.parseInt(getControl(), 16), 8);
         }
 
 
         /**
          * 是否分帧
-         *
+         * 0 不分帧， 1 分帧
          * @return
          */
         public int getFrameSeparateCode() {
@@ -894,7 +897,6 @@ public class Frame698 implements Cloneable, IFrame {
             if (parseCode != 0) return new Frame698().newBuilder().setLinkDataStr("解析失败").build();
             return new Frame698().newBuilder()
                     .setDirPrm(getDirPrm())
-                    .setFrameSeparate(getFrameSeparateCode() == 1)
                     .setScrambling(getFrameIsScrambling() == 1)
                     .setFunctionCode(getFunctionCode())
                     .setServerAddress(getServerAddress(),getServerAddressType())
@@ -903,6 +905,7 @@ public class Frame698 implements Cloneable, IFrame {
                     .setLinkDataStr(getLinkDataStr())
                     .setFrameSeparateStatus(getFrameSeparateStatus())
                     .setFrameSeparateNumber(getFrameSeparateNumber())
+                    .setFrameSeparate(getFrameSeparateCode() == 1)
                     .build();
         }
 
@@ -937,9 +940,9 @@ public class Frame698 implements Cloneable, IFrame {
             String separateFrameAreaStr = getFrameSeparateStr();
             if (getFrameSeparateCode() != 1) return 0;
             String separateFrameAreaBinaryStr = NumberConvert.
-                    toBinaryStrWithAddZero(Integer.parseInt(separateFrameAreaStr, 16), 16);
+                    toBinaryStr(Integer.parseInt(separateFrameAreaStr, 16), 16);
             //frame698Str.substring(6, 8);
-            return Integer.parseInt(separateFrameAreaBinaryStr.substring(start, end));
+            return Integer.parseInt(separateFrameAreaBinaryStr.substring(start, end),2);
         }
 
 
@@ -984,6 +987,12 @@ public class Frame698 implements Cloneable, IFrame {
                     "通配地址",
                     "广播地址",
             };
+            String[] separateStatus = new String[]{
+                    "起始帧",// 0b00
+                    "最后帧",// 0b01
+                    "确认帧",// 0b10
+                    "中间帧",// 0b11
+            };
             return "698报文帧: " + frame698Str + "\n" +
                     frame698Str.substring(0, 2) + " 帧头\n" +
                     frame698Str.substring(2, 6) + " 帧长度L:"+ Integer.parseInt(lenStr, 16) + "字节（10进制）\n" +
@@ -997,6 +1006,7 @@ public class Frame698 implements Cloneable, IFrame {
                     +serverAddressType[getServerAddressType()]+"\n"+
                     getClientAddressStr() + " 客户端地址CA: " +getClientAddress()+"\n"+
                     frame698Str.substring(getAddressIndexEnd(frame698Str),getAddressIndexEnd(frame698Str)+4) + " 帧头校验HCS\n"+
+                    (getFrameSeparateCode()==1?getFrameSeparateStr()+ " 分帧传输"+separateStatus[getFrameSeparateStatus()]+" 分帧序号： "+getFrameSeparateNumber()+"\n":"")+
                     getLinkDataStr()+" 链路用户数据\n"+
                     frame698Str.substring(frame698Str.length()-6,frame698Str.length()-2)+" 帧校验\n"+
                     frame698Str.substring(frame698Str.length()-2,frame698Str.length())+" 帧尾";
