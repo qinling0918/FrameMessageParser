@@ -6,6 +6,8 @@
 
 ##### 安装后插件打开方式
 
+菜单栏--> Help --> Parser 
+
 ![image-20200909174353333](https://github.com/qinling0918/FrameMessageParser/blob/master/images/image-20200909174353333.png)
 
 ##### 使用方式
