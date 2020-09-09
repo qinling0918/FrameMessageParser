@@ -3,6 +3,7 @@ package com.sgcc.pda.framelibrary.protocol698;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import org.jf.util.SparseArray;
+import org.jf.util.TextUtils;
 
 
 import java.util.ArrayList;
@@ -79,6 +80,9 @@ public class Frame698Separator {
         }
 
         public ArrayList<Frame698> build() {
+            linkDataStr = null!=linkDataStr&& linkDataStr.length()>0
+                    ? linkDataStr
+                    : getLinkDataStr();
             ArrayList<String> apduLinkStrs = getApduLinkStrs(linkDataStr, upperLimit * 2);
 
             if (apduLinkStrs.size() == 1) {
@@ -87,6 +91,11 @@ public class Frame698Separator {
                 getSeparateFrame698s(apduLinkStrs);
             }
             return frame698s;
+        }
+
+        private String getLinkDataStr() {
+            Frame698.Parser parser = new Frame698().parse(frame698Builder.toHexString());
+            return parser.parseCode == 0 ? parser.getLinkDataStr() : "";
         }
 
         private void getNormalFrame698s(ArrayList<String> apduLinkStrs) {
@@ -99,7 +108,7 @@ public class Frame698Separator {
                 frame698s.add(createFrame698(i, separateStatus, apduLinkStrs.get(i)));
             }
             // 确认帧
-            frame698s.add(1, createFrame698(0b00, 0b00, ""));
+           // frame698s.add(1, createFrame698(0b00, 0b00, ""));
         }
 
 
@@ -193,11 +202,34 @@ public class Frame698Separator {
             return this;
         }
 
+        /**
+         * 设置 698对象建造者对象
+         * @param frame698Builder
+         * @return
+         */
         public Builder setFrame698Builder(Frame698.Builder frame698Builder) {
             this.frame698Builder = frame698Builder;
             return this;
         }
 
+        /**
+         * 设置698原文
+         * @param frame698 698帧对象
+         * @return
+         */
+        public Builder setFrame698(Frame698 frame698) {
+            this.frame698Builder = frame698.newBuilder();
+            return this;
+        }
+        /**
+         * 设置698原文16
+         * @param frame698Str 698原文16进制字符串
+         * @return
+         */
+        public Builder setFrame698Str(String frame698Str) {
+            this.frame698Builder = new Frame698.Parser(frame698Str).reBuild().newBuilder();
+            return this;
+        }
         /**
          * 设置总链路数据层
          *

@@ -2,6 +2,7 @@ package com.sgcc.pda.framelibrary.utils;
 
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.StringDef;
 
 
@@ -19,6 +20,7 @@ public final class NumberConvert {
     public static final String REGEX_HEX = "^[A-Fa-f0-9]+$";
     public static final String REGEX_BINARY = "^[0-1]+$";
     public static final String REGEX_OCTAL = "^[0-7]+$";
+    public static final String REGEX_DECIMAL = "^[0-9]+$";
 
     @StringDef({yyyyMMddHHmmss, yyyyMMdd, HHmmss})
     @Retention(RetentionPolicy.SOURCE)
@@ -59,6 +61,15 @@ public final class NumberConvert {
     public static boolean isHexUnsignedStr(String hexStr) {
         return hexStr.matches(REGEX_HEX);
     }
+    /**
+     *  是不是10进制字符串
+     * @param decimalStr 10进制字符串
+     * @return boolean
+     */
+    public static boolean isDecimalStr(String decimalStr) {
+        decimalStr = checkMinus(decimalStr);
+        return decimalStr.matches(REGEX_DECIMAL);
+    }
 
     /**
      * 是否是 2进制字符串
@@ -85,7 +96,12 @@ public final class NumberConvert {
         octalStr = checkMinus(octalStr);
         return octalStr.matches(REGEX_OCTAL);
     }
-
+    public static boolean isWhiteSpaces(@Nullable CharSequence s) {
+        return s != null && s.toString().matches("\\s+");
+    }
+    public static boolean isEmpty(@Nullable CharSequence text) {
+        return text == null || text.length() == 0 || isWhiteSpaces(text) /*|| text.equalsIgnoreCase("null")*/;
+    }
     /**
      * 检查是不是带有"-"号的负数
      *
@@ -122,6 +138,7 @@ public final class NumberConvert {
         }
     }
 
+
     public static int parseUnsignedInt(String s, int radix)
             throws NumberFormatException {
         if (s == null)  {
@@ -138,7 +155,7 @@ public final class NumberConvert {
             } else {
                 if (len <= 5 || // Integer.MAX_VALUE in Character.MAX_RADIX is 6 digits
                         (radix == 10 && len <= 9) ) { // Integer.MAX_VALUE in base 10 is 10 digits
-                    return parseInt(s, radix);
+                    return Integer.parseInt(s, radix);
                 } else {
                     long ell = Long.parseLong(s, radix);
                     if ((ell & 0xffff_ffff_0000_0000L) == 0) {
@@ -154,8 +171,24 @@ public final class NumberConvert {
             throw new NumberFormatException("For input string: \"" + s + "\"");
         }
     }
+    public static Double parseDouble(String codeStr) {
+        return parseDouble(codeStr, null);
+    }
 
-
+    public static Double parseDouble(String codeStr, Double defaultValue) {
+        try {
+            return Double.parseDouble(codeStr);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+    /**
+     *
+     * @param s
+     * @param radix
+     * @return
+     * @throws NumberFormatException
+     */
     public static long parseUnsignedLong(String s, int radix)
             throws NumberFormatException {
         if (s == null) {
@@ -355,7 +388,7 @@ public final class NumberConvert {
      * @param hex 16进制字符串
      * @return ASCII码字符串
      */
-    public String hexStrToAsciiString(String hex) {
+    public static String hexStrToAsciiString(String hex) {
 
         StringBuilder sb = new StringBuilder();
         StringBuilder temp = new StringBuilder();

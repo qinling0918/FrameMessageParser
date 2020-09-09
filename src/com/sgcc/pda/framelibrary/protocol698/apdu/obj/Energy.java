@@ -1,23 +1,23 @@
 package com.sgcc.pda.framelibrary.protocol698.apdu.obj;
 
 
-import com.sgcc.pda.framelibrary.protocol698.Frame698;
-import com.sgcc.pda.framelibrary.protocol698.apdu.APDU;
+
+
 import com.sgcc.pda.framelibrary.protocol698.apdu.data.DataManager;
-import com.sgcc.pda.framelibrary.protocol698.apdu.data.OI;
 import com.sgcc.pda.framelibrary.protocol698.apdu.data.ScalerUnit;
 import com.sgcc.pda.framelibrary.utils.NumberConvert;
-import org.jf.util.SparseArray;
-import org.json.JSONArray;
-import org.json.JSONException;
+import com.sgcc.pda.framelibrary.utils.RecoverableString;
 
-import java.text.NumberFormat;
-import java.util.Arrays;
+import org.jf.util.SparseArray;
 
 
 /**
- * Created by qinling on 2018/5/22 15:07
- * Description:
+ * Description:7.3.1　电能量接口类（class_id=1）
+ * 本接口类对象提供存储电能量类信息，定义见表124
+ * 费率， 总，尖，峰，平，谷
+ *
+ * @author qinling
+ * @date 2018/5/22 15:07
  */
 public class Energy extends Obj {
 
@@ -92,9 +92,12 @@ public class Energy extends Obj {
                     "0502\t1\tB相关联电能\n" +
                     "0503\t1\tC相关联电能"
     };
-    // kWh 33 ,kvarh
+    /**
+     * kWh 33 ,kvarh
+     */
     private static final ScalerUnit[] scalerUnits = new ScalerUnit[]{
-            new ScalerUnit(-2, 33), // kWh
+            // kWh
+            new ScalerUnit(-2, 33),
             new ScalerUnit(-2, 33),
             new ScalerUnit(-2, 35),
             new ScalerUnit(-2, 35),
@@ -109,14 +112,11 @@ public class Energy extends Obj {
             Choice.DOUBLE_LONG_UNSIGNED,
             Choice.DOUBLE_LONG_UNSIGNED,
             Choice.DOUBLE_LONG_UNSIGNED,
-
-
     };
 
-    private static SparseArray<Energy> energySparseArray = new SparseArray<>();
+    private static SparseArray<EnergyInner> energySparseArray = new SparseArray<>();
 
     static {
-
         for (int i = 0; i < ENERGY_INFO.length; i++) {
             String energyStr = ENERGY_INFO[i];
             ScalerUnit scalerUnit = scalerUnits[i];
@@ -124,62 +124,90 @@ public class Energy extends Obj {
             String[] energyInfoArr = energyStr.split("\n");
             for (String energyInfo : energyInfoArr) {
                 String[] energyArr = energyInfo.split("\t");
-                int interfClass = Integer.parseInt(energyArr[1], 16);
+                int interfClass = Integer.parseInt(energyArr[1]);
                 int objNo = Integer.parseInt(energyArr[0], 16);
-                Energy energy = new Energy(energyArr[2], interfClass, energyArr[0], choice, scalerUnit);
-                energySparseArray.put(objNo, energy);
+                int attributes = Integer.parseInt(energyArr[0].substring(2), 16);
+                EnergyInner energyInner = new EnergyInner(energyArr[2], interfClass, attributes, choice, scalerUnit);
+                energySparseArray.put(objNo, energyInner);
             }
         }
     }
-    public String getJson() {
+
+    private String type;
+
+    public Energy(String oadHexStr, RecoverableString objValueHexStr) {
+        super(oadHexStr, objValueHexStr);
         try {
-            JSONArray jsonArray = new JSONArray(getRatePower());
-            return jsonArray.toString();
-        } catch (JSONException e) {
-            e.printStackTrace();
+            String oiStr = oadHexStr.substring(0, 4);
+            int logicNo = Integer.parseInt(oiStr, 16);
+            EnergyInner energyInner = energySparseArray.get(logicNo);
+            this.objName = energyInner.objName;
+            this.interfClass = energyInner.interfClass;
+            this.scalerUnit = energyInner.scalerUnit;
+            this.choice = energyInner.choice;
+            // 0010 0200 正向有功电能（低精度)   0010 0400 正向有功电能（高精度)
+            // 默认低精度，当为4时，需要调整为高精度
+            if (this.attributes == 4) {
+                // 若是位数转换 -2，则调整为 -4
+                this.scalerUnit.setPow(-4);
+            }
+        } catch (Exception e) {
+            // 截取字符串，或者数字格式化失败
             parseException(e);
-            return null;
+        }
+        setRatePowerHexStr(objValueHexStr);
+    }
+
+    @Override
+    public String toFormatString() {
+        StringBuilder stringBuilder = new StringBuilder(objName).append(":");
+        String[] name = new String[]{"总", "尖", "峰", "平", "谷"};
+        String[] ratePower = getRatePower();
+        if (ratePower == null || ratePower.length == 0) {
+            return stringBuilder.append("暂无数据").toString();
+        }
+        if (index > 0) {
+            return stringBuilder
+                    .append(name[index - 1])
+                    .append(": ")
+                    .append(null == ratePower[0] ? "暂无数据" : ratePower[0])
+                    .toString();
+        }
+        stringBuilder.append("\n");
+        for (int i = 0; i < ratePower.length; i++) {
+            stringBuilder
+                    .append(name[i])
+                    .append(": ")
+                    .append(ratePower[i])
+                    .append("\n");
+        }
+        return stringBuilder.toString();
+    }
+
+    public static final class EnergyInner extends Inner {
+        /**
+         * 属性
+         */
+        final int attributes;
+        private final ScalerUnit scalerUnit;
+        private final Choice choice;
+
+        EnergyInner(String objName, int interfClass, int attributes, Choice choice, ScalerUnit scalerUnit) {
+            super(objName, interfClass);
+            this.attributes = attributes;
+            this.scalerUnit = scalerUnit;
+            this.choice = choice;
         }
     }
-   /* public String toList() {
-        try {
-            JSONArray jsonArr = new JSONArray(getJson());//转换成JSONArray 格式
-            List<AddProduct> goodBeanList = JSONArray.toList(jsonArr, AddProduct.class);//获得产品数组
-            return jsonArray.toString();
-        } catch (JSONException e) {
-            e.printStackTrace();
-            parseException(e);
-            return null;
-        }
-    }
-*/
 
     public static void main(String[] args) {
-        NumberFormat nf = NumberFormat.getInstance();
-        //  System.out.println("格式化后显示数字："+nf.format(10000000));
-        //  System.out.println("格式化后显示数字："+nf.format(10000.345));
-        // new Frame698.Builder().setLinkData()
-        Energy energy = Energy.newInstance("00100200");
-        String hex = "05 06 00 00 00 00 06 00 00 00 00 06 00 00 00 00 06 00 00 00 00 06 00 00 00 00".replace(" ", "");
-        String hex1 = "FE  FE  FE  FE  68  FE  01  E3  05  46  00  00  00  00  00  00  DF  AD  00  00  90  00  82  01  E7  85  03  01  50  05  02  00  0D  00  20  23  02  00  00  20  21  02  00  00  00  00  02  00  00  00  10  02  00  00  00  20  02  00  00  00  30  02  00  00  00  40  02  00  00  00  50  02  00  00  00  60  02  00  00  00  70  02  00  00  00  80  02  00  00  10  10  02  00  00  10  20  02  00  01  01  06  00  00  00  00  1C  07  E3  04  01  00  00  00  01  05  05  00  00  00  00  05  00  00  00  00  05  00  00  00  00  05  00  00  00  00  05  00  00  00  00  01  05  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  01  05  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  01  05  05  00  00  00  00  05  00  00  00  00  05  00  00  00  00  05  00  00  00  00  05  00  00  00  00  01  05  05  00  00  00  00  05  00  00  00  00  05  00  00  00  00  05  00  00  00  00  05  00  00  00  00  01  05  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  01  05  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  01  05  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  01  05  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  06  00  00  00  00  01  05  02  02  06  00  00  00  00  1C  00  00  00  00  00  00  00  02  02  06  00  00  00  00  1C  00  00  00  00  00  00  00  02  02  06  00  00  00  00  1C  00  00  00  00  00  00  00  02  02  06  00  00  00  00  1C  00  00  00  00  00  00  00  02  02  06  00  00  00  00  1C  00  00  00  00  00  00  00  01  05  02  02  06  00  00  00  00  1C  00  00  00  00  00  00  00  02  02  06  00  00  00  00  1C  00  00  00  00  00  00  00  02  02  06  00  00  00  00  1C  00  00  00  00  00  00  00  02  02  06  00  00  00  00  1C  00  00  00  00  00  00  00  02  02  06  00  00  00  00  1C  00  00  00  00  00  00  00  00  00  01  7B  D3  16  ".replace(" ", "");
-        energy.setRatePowerHexStr(hex);
-        System.out.println(hex1);
-        System.out.println(Integer.toHexString(0x0104*0x100+0x01));
-        System.out.println(Integer.toHexString(0x0104*0x100));
-        System.out.println(Integer.toHexString(0x010400%0x100));
-        System.out.println(Integer.toHexString(0x010401%0x100));
-
-        System.out.println(energy.getObjName());
-        System.out.println(Integer.parseInt("10",2));
-
-        System.out.println(energy.getJson());
-        System.out.println(Arrays.toString(energy.getRatePower()));
-
-
-       /* System.out.println(energy.getRatePower()[2]);
+        String hex = "0105 06 00 00 00 00 06 00 00 00 00 06 00 00 00 00 06 00 00 00 00 06 00 00 00 00".replace(" ", "");
+        Energy energy = new Energy("00100200", new RecoverableString(hex));
+        System.out.println(energy.getRatePower()[0]);
+        System.out.println(energy.getRatePower()[1]);
+        System.out.println(energy.getRatePower()[2]);
         System.out.println(energy.getRatePower()[3]);
-        System.out.println(energy.getRatePower()[4]);*/
-
+        System.out.println(energy.getRatePower()[4]);
 
     }
 
@@ -200,13 +228,11 @@ public class Energy extends Obj {
     private ScalerUnit scalerUnit;
     private Choice choice;
 
-    public String[] getRatePower() {
-        return ratePower;
-    }
 
-    public void setRatePowerHexStr(String ratePowerHexStr) {
-        this.ObjValueHexStr = ratePowerHexStr;
-        String hexStr = ratePowerHexStr;
+    public String[] getRatePower() {
+        // if (ratePower != null && ratePower.length != 0) return ratePower;
+       /* // 将array标识删除，只需要 数据项
+        String hexStr = this.objValueHexStr.substring(2);
         // 获取第一个字节：Array的元素个数
         try {
             Integer len = Integer.parseInt(hexStr.substring(0, 2), 16);
@@ -220,7 +246,7 @@ public class Energy extends Obj {
                     isEnergyChoiceType = isEnergyChoiceType || dataType == choice.value;
                 }
                 if (!isEnergyChoiceType) {
-                    String dataTypeStr = obj == 4
+                    String dataTypeStr = attributes == 4
                             ? "long64(0x14)，long64-unsigned(0x15)"
                             : "double-long(0x05)，double-long-unsigned(0x06)";
                     throw new Exception("获取到的数据类型不正确，应为: " + dataTypeStr);
@@ -234,53 +260,90 @@ public class Energy extends Obj {
             }
         } catch (Exception e) {
             parseException(e);
+
+            ratePower = null;
+        }*/
+        return ratePower;
+    }
+
+    private void setRatePowerHexStr(RecoverableString ratePowerHexStr) {
+        if (index != 0) {
+            try {
+                ratePower = new String[1];
+                getItemRatePower(ratePowerHexStr, 0);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            getArray(ratePowerHexStr);
+        }
+    }
+
+    private void getArray(RecoverableString ratePowerHexStr) {
+        String dataType = ratePowerHexStr.substring(0,2);
+        if ("00".equalsIgnoreCase(dataType)){
+          return;
+        }
+        // 获取第一个字节：Array的元素个数
+        try {
+            Integer len = Integer.parseInt(ratePowerHexStr.substring(0, 2), 16);
+            ratePower = new String[len];
+            for (int i = 0; i < len; i++) {
+                getItemRatePower(ratePowerHexStr, i);
+                // 将数据移到下一项
+                // hexStr = ratePowerHexStr.substring(2 + dataLen);
+                //ratePowerHexStr.substring(2 + dataLen);
+            }
+        } catch (Exception e) {
+            parseException(e);
+        }
+    }
+
+    private void getItemRatePower(RecoverableString ratePowerHexStr, int i) throws Exception {
+        Integer dataType = Integer.parseInt(ratePowerHexStr.substring(0, 2), 16);
+        // 判断是不是电能量对应的四个 数据类型
+        boolean isEnergyChoiceType = false;
+        for (Choice choice : Choice.values()) {
+            isEnergyChoiceType = isEnergyChoiceType || dataType == choice.value;
+        }
+        if (!isEnergyChoiceType) {
+            String dataTypeStr = attributes == 4
+                    ? "long64(0x14)，long64-unsigned(0x15)"
+                    : "double-long(0x05)，double-long-unsigned(0x06)";
+            throw new Exception("获取到的数据类型不正确，应为: " + dataTypeStr);
         }
 
-
+        int dataLen = DataManager.getInstance().getDataByteSize(dataType) * 2;
+        String ratePowerHex = ratePowerHexStr.substring(0, dataLen);
+        ratePower[i] = getRatePower(dataType, ratePowerHex);
     }
 
     private String getRatePower(Integer dataType, String ratePowerHex) throws NumberFormatException {
         if (dataType == Choice.DOUBLE_LONG.value) {
-            return getFormatWithUnit(Integer.parseInt(ratePowerHex, 16),scalerUnit);
+            return getFormatValueWithUnit(Integer.parseInt(ratePowerHex, 16), scalerUnit);
         } else if (dataType == Choice.DOUBLE_LONG_UNSIGNED.value) {
-            return getFormatWithUnit(NumberConvert.parseUnsignedInt(ratePowerHex, 16),scalerUnit);
+            return getFormatValueWithUnit(NumberConvert.parseUnsignedInt(ratePowerHex, 16), scalerUnit);
         } else if (dataType == Choice.LONG64_UNSIGNED.value) {
-            return getFormatWithUnit(NumberConvert.parseUnsignedLong(ratePowerHex, 16), scalerUnit);
+            return getFormatValueWithUnit(NumberConvert.parseUnsignedLong(ratePowerHex, 16), scalerUnit);
         } else if (dataType == Choice.LONG64.value) {
-            return getFormatWithUnit(Long.parseLong(ratePowerHex, 16),scalerUnit);
+            return getFormatValueWithUnit(Long.parseLong(ratePowerHex, 16), scalerUnit);
         } else {
             return "";
         }
-
     }
 
-    private Energy() {
-    }
-
-    private Energy(String objName, int interfClass, String logicName, Choice choice, ScalerUnit scalerUnit) {
-        setEnergy(objName, interfClass, logicName, choice, scalerUnit);
-    }
-
-    private void setEnergy(String objName, int interfClass, String logicName, Choice choice, ScalerUnit scalerUnit) {
-        setObjValue(objName,interfClass,logicName);
-        this.choice = choice;
-        this.scalerUnit = scalerUnit;
-    }
 
     //
-    public static Energy newInstance(String oadHexStr) {
+  /*  public static Energy newInstance(String oadHexStr) {
         Energy energy = new Energy();
         try {
             String oiStr = oadHexStr.substring(0, 4);
             int logicNo = Integer.parseInt(oiStr, 16);
             energy = energySparseArray.get(logicNo);
             energy.oadHexStr = oadHexStr;
-
-            energy.logicName = new OI(oiStr);
-
             // 0010 0200 正向有功电能（低精度)   0010 0400 正向有功电能（高精度)
-            energy.obj = Integer.parseInt(oadHexStr.substring(4, 6), 16);
-            if (energy.obj == 4) { // 默认低精度，当为4时，需要调整为高精度
+            energy.attributes = Integer.parseInt(oadHexStr.substring(4, 6), 16);
+            if (energy.attributes == 4) { // 默认低精度，当为4时，需要调整为高精度
                 // 若是位数转换 -2，则调整为 -4
                 energy.scalerUnit.setPow(-4);
             }
@@ -290,12 +353,19 @@ public class Energy extends Obj {
         }
         return energy;
     }
-
-    public Energy newInstance(String oadHexStr, String ratePowerHexStr) {
+*/
+    /**
+     * 根据数据标识以及对应的费率16进制字符串  生成电能量实例
+     *
+     * @param oadHexStr       数据标识
+     * @param ratePowerHexStr
+     * @return
+     */
+ /*   public Energy newInstance(String oadHexStr, String ratePowerHexStr) {
         Energy energy = newInstance(oadHexStr);
-        energy.setRatePowerHexStr(ratePowerHexStr);
+        energy.setObjValueHexStr(ratePowerHexStr);
         return energy;
-    }
+    }*/
 
 
 }

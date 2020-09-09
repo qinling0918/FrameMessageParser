@@ -17,15 +17,15 @@ public class SelfOperation implements ISecurityFrameFormat {
 
     @Override
     public String getCommandResponseInfo(int response_commandCode) {
-        return response_commandCode<0x80
-                ?safeUnitCommands.get(response_commandCode)
-                :safeUnitResponses.get(response_commandCode);
+        return response_commandCode < 0x80
+                ? safeUnitCommands.get(response_commandCode)
+                : safeUnitResponses.get(response_commandCode);
     }
 
     @Override
     public String getStatusInfo(int response_commandCode, int statusCode) {
-        String error = response_commandCode<0x80 ? "请求帧无状态码":"";
-        return safeUnitErrors.get(response_commandCode,new SparseArray<>()).get(statusCode,error);
+        String error = response_commandCode < 0x80 ? "请求帧无状态码" : "";
+        return safeUnitErrors.get(response_commandCode, new SparseArray<>()).get(statusCode, error);
     }
 
     @Override
@@ -45,7 +45,6 @@ public class SelfOperation implements ISecurityFrameFormat {
     }
 
 
-
     private SparseArray<SparseArray<String>> safeUnitErrors = new SparseArray<>(); // 状态码
     private SparseArray<String> safeUnitCommands = new SparseArray<>(); // 命令码
     private SparseArray<String> safeUnitResponses = new SparseArray<>(); // 响应码
@@ -55,7 +54,7 @@ public class SelfOperation implements ISecurityFrameFormat {
     public SelfOperation() {
         initSelfOperationErrors(); // 初始化状态码
         initSelfOperationCommand_Response();// 初始化命令码与响应码
-       // initSelfOperationFormat();// 初始化命令码与响应码
+        // initSelfOperationFormat();// 初始化命令码与响应码
     }
 
    /* private void initSelfOperationFormat() {
@@ -122,7 +121,7 @@ public class SelfOperation implements ISecurityFrameFormat {
         safeUnitCommands.put(0x02, "验证操作员密码");
         safeUnitCommands.put(0x01, "获取安全单元信息");
         for (int i = 0; i < safeUnitCommands.size(); i++) {
-            safeUnitResponses.put((safeUnitCommands.keyAt(i)+0x80),safeUnitCommands.valueAt(i));
+            safeUnitResponses.put((safeUnitCommands.keyAt(i) + 0x80), safeUnitCommands.valueAt(i));
         }
 
     }
@@ -147,7 +146,7 @@ public class SelfOperation implements ISecurityFrameFormat {
     /**
      * 获取安全单元信息
      *
-     * @return SparseArray<Integer   ,       String>
+     * @return SparseArray<Integer               ,                               String>
      */
     private SparseArray<String> getSafeUnitInfoErrors() {
         SparseArray<String> errors = new SparseArray<>();
@@ -168,7 +167,7 @@ public class SelfOperation implements ISecurityFrameFormat {
     /**
      * 验证操作员密码
      *
-     * @return SparseArray<Integer   ,       String>
+     * @return SparseArray<Integer               ,                               String>
      */
     private SparseArray<String> checkUserPasswordErrors() {
         SparseArray<String> errors = new SparseArray<>();
@@ -191,7 +190,7 @@ public class SelfOperation implements ISecurityFrameFormat {
     /**
      * 修改操作员密码
      *
-     * @return SparseArray<Integer   ,       String>
+     * @return SparseArray<Integer               ,                               String>
      */
     private SparseArray<String> changePasswordErrors() {
         SparseArray<String> errors = new SparseArray<>();
@@ -217,7 +216,7 @@ public class SelfOperation implements ISecurityFrameFormat {
     /**
      * 锁定安全单元
      *
-     * @return SparseArray<Integer   ,       String>
+     * @return SparseArray<Integer               ,                               String>
      */
     private SparseArray<String> lockSecurityUnitErrors() {
         SparseArray<String> errors = new SparseArray<>();
@@ -230,7 +229,7 @@ public class SelfOperation implements ISecurityFrameFormat {
     /**
      * 解锁安全单元
      *
-     * @return SparseArray<Integer   ,       String>
+     * @return SparseArray<Integer               ,                               String>
      */
     private SparseArray<String> unLockSecurityUnitErrors() {
         SparseArray<String> errors = new SparseArray<>();
@@ -246,7 +245,7 @@ public class SelfOperation implements ISecurityFrameFormat {
     /**
      * 一次发行安全单元
      *
-     * @return SparseArray<Integer   ,       String>
+     * @return SparseArray<Integer               ,                               String>
      */
     private SparseArray<String> safeUnitOneReleaseErrors() {
         SparseArray<String> errors = new SparseArray<>();
@@ -260,7 +259,7 @@ public class SelfOperation implements ISecurityFrameFormat {
     /**
      * 二次发行安全单元
      *
-     * @return SparseArray<Integer   ,       String>
+     * @return SparseArray<Integer               ,                               String>
      */
     private SparseArray<String> safeUnitTwoReleaseErrors() {
         SparseArray<String> errors = new SparseArray<>();
@@ -274,7 +273,7 @@ public class SelfOperation implements ISecurityFrameFormat {
     /**
      * 存储关键数据
      *
-     * @return SparseArray<Integer   ,       String>
+     * @return SparseArray<Integer               ,                               String>
      */
     private SparseArray<String> storeKeyDataErrors() {
         SparseArray<String> errors = new SparseArray<>();
@@ -287,7 +286,7 @@ public class SelfOperation implements ISecurityFrameFormat {
     /**
      * 读取关键数据
      *
-     * @return SparseArray<Integer   ,       String>
+     * @return SparseArray<Integer               ,                               String>
      */
     private SparseArray<String> readKeyDataErrors() {
         SparseArray<String> errors = new SparseArray<>();
@@ -300,7 +299,7 @@ public class SelfOperation implements ISecurityFrameFormat {
     /**
      * 透明转发ESAM指令
      *
-     * @return SparseArray<Integer   ,       String>
+     * @return SparseArray<Integer               ,                               String>
      */
     private SparseArray<String> transparentForwardingESAMErrors() {
         SparseArray<String> errors = new SparseArray<>();
@@ -314,7 +313,7 @@ public class SelfOperation implements ISecurityFrameFormat {
     /**
      * 获取安全单元版本号
      *
-     * @return SparseArray<Integer   ,       String>
+     * @return SparseArray<Integer               ,                               String>
      */
     private SparseArray<String> getSafeUnitVersionCodeErrors() {
         SparseArray<String> errors = new SparseArray<>();

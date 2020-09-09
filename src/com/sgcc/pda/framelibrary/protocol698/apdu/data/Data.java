@@ -32,5 +32,29 @@ public abstract class Data implements IData {
     public byte[] hexStringToBytes(String hexString) {
         return NumberConvert.hexStringToBytes(hexString);
     }
+    protected void checkNull(String binString) {
+        if (null == binString || binString.length() == 0) {
+            throw new NullPointerException("参数异常,不能为null");
+        }
+    }
+
+    protected Integer parseInt(String numStr, int radix) {
+        try {
+            return Integer.parseInt(numStr, radix);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    protected boolean isHexUnsignedStr(String valueHexStr) {
+        return NumberConvert.isHexUnsignedStr(valueHexStr);
+    }
+
+    protected int toUnsignedInt(byte x) {
+        return ((int) x) & 0xff;
+    }
+
+
+
 
 }

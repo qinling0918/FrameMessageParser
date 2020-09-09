@@ -1,6 +1,7 @@
 package com.sgcc.pda.framelibrary.utils;
 
 import com.sgcc.pda.framelibrary.protocol698.Frame698;
+import com.sgcc.pda.framelibrary.protocol698.Frame698Separator;
 import com.sgcc.pda.framelibrary.protocol698.apdu.data.OAD;
 import com.sgcc.pda.framelibrary.protocol698.apdu.data.PIID;
 import com.sgcc.pda.framelibrary.protocol698.apdu.data.ScalerUnit;
@@ -14,6 +15,7 @@ import com.sun.jna.NativeLong;
 import com.sun.jna.Structure;
 import com.sun.jna.WString;
 import com.sun.jna.platform.win32.WinGDI;
+import gherkin.deps.com.google.gson.Gson;
 import org.jf.util.BitSetUtils;
 import org.jf.util.SparseIntArray;
 import org.jf.util.StringUtils;
@@ -21,10 +23,10 @@ import sun.security.util.BitArray;
 
 import javax.swing.plaf.synth.Region;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.List;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.regex.Pattern;
 
 import static com.sgcc.pda.framelibrary.protocol698.Frame698.ADDRESS_TYPE_BROADCAST;
 import static com.sgcc.pda.framelibrary.protocol698.Frame698.ADDRESS_TYPE_GROUP;
@@ -39,10 +41,11 @@ import static com.sgcc.pda.framelibrary.protocol698.Frame698.REGEX_SINGLE_GROUP;
  */
 public class StringToHex {
 
-    public static class CompanyStruct extends Structure{
+    public static class CompanyStruct extends Structure {
         public int id = 0;
         public String name = "123";
         public UserStruct userStruct = new UserStruct();
+
         @Override
         protected List getFieldOrder() {
             List a = new ArrayList();
@@ -53,7 +56,7 @@ public class StringToHex {
         }
     }
 
-    public static class UserStruct extends Structure{
+    public static class UserStruct extends Structure {
         public int id = 1;
         public String name = "456";
 
@@ -68,8 +71,7 @@ public class StringToHex {
     }
 
 
-
-    public static int getMaskedValue(String hexString, int mask)  {
+    public static int getMaskedValue(String hexString, int mask) {
         OAD oad = new OAD("00000000");
         System.out.println(oad.hashCode());
         try {
@@ -81,22 +83,105 @@ public class StringToHex {
 
     }
 
-    public static void getMaskedValue()  {
+    public static void getMaskedValue() {
         OAD oad = new OAD("00000000");
         System.out.println(oad.hashCode());
 
 
     }
+    private static String getTimeFormat(String time) {
+        if ("0000000000".equals(time) || TextUtils.isEmpty(time)){
+            return "";
+        }
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyMMddHHmm", Locale.CHINA);
+        SimpleDateFormat simpleDateFormat1 = new SimpleDateFormat("yy-MM-dd HH:mm", Locale.CHINA);
+        String timeFormat = "";
+        try{
+            Date date = simpleDateFormat.parse(time);
+            timeFormat = "20"+simpleDateFormat1.format(date);
+        }catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return timeFormat;
+    }
+    public static boolean isNumberWithPoint(String str,int afterPointPos) {
+
+        String REGEX = String.format("^(([1-9]{1}\\d*)|([0]{1}))(\\.(\\d){0,%d})?$",afterPointPos);
+        // 判断小数点后2位的数字的正则表达式
+        Pattern pattern = Pattern.compile(REGEX);
+        java.util.regex.Matcher match = pattern.matcher(str);
+        return match.matches();
+    }
+    public static boolean isNumberAfterPoint4(String str) {
+        return isNumberWithPoint(str,4);
+    }
     //504F533838383834  POS88884
     public static void main(String[] args) {
 
-       // OAD oad = new OAD("00000000");
-        getMaskedValue();
-        getMaskedValue();
-       // System.out.println(getMaskedValue("81",0X80));
-       // System.out.println(getMaskedValue("01",0X7F));
-       // System.out.println(String.format("%08x",12+(0x02<<24)));
-       // System.out.println(String.format("%08x",12+(0x01<<24)));
+        System.out.println(isNumberAfterPoint4("  "));
+        System.out.println(isNumberAfterPoint4("0.123a"));
+        System.out.println(isNumberAfterPoint4("1.11"));
+        System.out.println(isNumberAfterPoint4("1.111"));
+        System.out.println(isNumberAfterPoint4("1.1111"));
+        System.out.println(isNumberAfterPoint4("1.11111"));
+        // String time = "1403041537";
+        String time = "";
+       /* byte[] bytes = time.getBytes();
+
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyMMddHHmm", Locale.CHINA);
+        Date date = null;
+        try {
+            date = simpleDateFormat.parse(time);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        SimpleDateFormat simpleDateFormat1 = new SimpleDateFormat("yy-MM-dd HH:mm", Locale.CHINA);*/
+       TaskData taskData = new TaskData();
+
+        System.out.println(TextUtils.isEmpty(""));
+       /* System.out.println(NumberConvert.parseDouble("1.00"));
+        System.out.println(NumberConvert.parseDouble("a"));
+        System.out.println(NumberConvert.parseDouble("1"));
+        System.out.println(NumberConvert.parseDouble("-1"));*/
+      //  System.out.println(getTimeFormat("00"));
+        // 把一个完整的帧分成按照每个链路层 20字节 分帧
+        ArrayList<Frame698> frame698s = new Frame698Separator.Builder()
+                .setFrame698Builder(new Frame698.Builder()
+                        .setServerAddress("0000000000001",ADDRESS_TYPE_SINGLE)
+                        .setLinkDataStr("00000104010103020106030109040112010101010101010101010101010101010101010101010101010101010101"))
+               // .setFrame698Str("fefefefe681e00e30501000000000000723c034086c7eb6dca86010004569a8ff1372b16")
+               // .setFrame698Builder(new Frame698.Parser("").reBuild().newBuilder())
+               // .setLinkDataStr("00000104010103020106030109040112010101010101010101010101010101010101010101010101010101010102")
+                .setFrameUpperLimit(10)
+                .build();
+        for (int i = 0; i < frame698s.size(); i++) {
+            System.out.println(frame698s.get(i).toHexString());
+            System.out.println(new Frame698.Parser(frame698s.get(i).toHexString()).getLinkDataStr());
+        }
+     //   System.out.println(new Frame698.Parser("681100630501000000000000E9E40280664B16").getFrameSeparateNumber());
+
+
+/*        String string = "E90230020C022C9001820220ec396655d1aea7587bf90013a5f8838b6ab77c84adefd37851f780158ef125fa8fe8dddb72166a67b1ada4c7ef7923c88ff4dddb72156a67b1ada4c7ef7923c8511daa4a3bdb8833f639865f8f45aeaa5c320dda8106177bd5e8ac46464113005388038eabd35d474aea37f0c00b8c2153880392abd35d404aea37f0c00b8c2153880392abd35d404aea37f0c00b8c21a5a7a93c35ed739a90ed0cdbe8cd2dd2b0f62d52152b3fb70b9f2591334f435da0fd2d52152b3fb70b9f2591334f435da0fd2d52152b3fb70b9f2591334f435de3c01948b76c9303edc6ea93cc3b3e27c5988c8b567552dd97ad07f5c8e38ddcc59a9c82567552dd97ad07f5c8e38ddcc59a9c82567552dd97ad07f5c8e38ddc5a42512e3ebcae04e1fc996fc78ee262a953dac445f8bace85ff83ec6b9cd46da954dac455f4bace85ff83ec6b9cd46da954dac455f4bace85ff83ec6b9cd46da29683fdaf5ad4e14330e80fb6d7d050402e8d3734f874e5812f918d726ff90f532b8d2434fd64ee812f918d726ff90f532b8d2434fd64ee812f918d726ff90f9a8893f20d51f1812941776523e1a5c0785eeb9c5721aba3bb33668c2e552d29e9614f9dd15321bb37af966022488428d3866282d7b63f15e4d10fb71c8f4e94d0c26a411bab3c0bb242d74b9993a7e8ae4118a72087010217cecbcbb5376e9da1ba5b995b15802559c6b1abec03f0b64b2ad89750d9826842dd8eff7ea0ee46a0d6c12dda278ac08b3c86c7eb6dca86010004569a8ff17FE6";
+
+        for (int i = 0; i < 10; i++) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+
+                    NumberConvert.hexStringToBytes(string);
+                }
+            }).start();
+        }*/
+        // OAD oad = new OAD("00000000");
+
+
+
+        // getMaskedValue();
+        // getMaskedValue();
+        // System.out.println(getMaskedValue("81",0X80));
+        // System.out.println(getMaskedValue("01",0X7F));
+        // System.out.println(String.format("%08x",12+(0x02<<24)));
+        // System.out.println(String.format("%08x",12+(0x01<<24)));
 
 
       /*   try {
@@ -127,18 +212,18 @@ public class StringToHex {
         }*/
 
         //   System.out.println(Byte.parseByte("g",37));
-    //    System.out.println(Byte.toUnsignedInt((byte) 0xff));
-      //  System.out.println(Long.toUnsignedString(0XFFFFFFFFFFFFFFFFL));
+        //    System.out.println(Byte.toUnsignedInt((byte) 0xff));
+        //  System.out.println(Long.toUnsignedString(0XFFFFFFFFFFFFFFFFL));
 
-      //  System.out.println(Unit.getInstance().getUnit(13));
-   // ArrayList<Unit> unitList = new ArrayList<>();
+        //  System.out.println(Unit.getInstance().getUnit(13));
+        // ArrayList<Unit> unitList = new ArrayList<>();
 
 
-       //  System.out.println(toBinary(-3,16));
+        //  System.out.println(toBinary(-3,16));
         // System.out.println(Integer.toBinaryString(-3));
-      //   System.out.println();
+        //   System.out.println();
 
-       //  System.out.println(Integer.parseInt(toBinary(-3,16).substring(1),2));
+        //  System.out.println(Integer.parseInt(toBinary(-3,16).substring(1),2));
         //formatHex(a, 16);
        /* System.out.println(System.currentTimeMillis());
         System.out.println(toHex(a,16));
@@ -149,9 +234,9 @@ public class StringToHex {
         System.out.println(System.currentTimeMillis());*/
 
 
-       // String data = "68 35 00 43 05 01 00 00 00 00 00 00 0F AF 05 03 00 50 04 02 00 01 20 21 02 00 1C 1C 07 E0 01 14 00 00 00 03 00 20 21 02 00 00 20 21 02 00 00 00 10 02 00 00 FD 5B 16";
+        // String data = "68 35 00 43 05 01 00 00 00 00 00 00 0F AF 05 03 00 50 04 02 00 01 20 21 02 00 1C 1C 07 E0 01 14 00 00 00 03 00 20 21 02 00 00 20 21 02 00 00 00 10 02 00 00 FD 5B 16";
 
-       // System.out.println(data.replaceAll(" ",""));
+        // System.out.println(data.replaceAll(" ",""));
 
        /* String taskData = "010300290503035004020002202102001C07E301050000001C07E3010600000000020020210200000010020000616F5090#010300290503035004020002202102001C07E301040000001C07E3010500000000020020210200000010020000116CFBEE#010300290503035004020002202102001C07E301030000001C07E30104000000000200202102000000100200005617AE1D*010300290503035004020002202102001C07E301050000001C07E3010600000000020020210200000020020000A5049056#010300290503035004020002202102001C07E301040000001C07E30105000000000200202102000000200200008DF6E3CE#010300290503035004020002202102001C07E301030000001C07E3010400000000020020210200000020020000DC859AFB";
         //       // String[] tasks = a.split("\\*");
@@ -180,21 +265,21 @@ public class StringToHex {
             System.out.println(bitSet1.get(i));
 
         }*/
-      //  System.out.println( Arrays.toString(bitSet1.get(0,3).toLongArray()));
+        //  System.out.println( Arrays.toString(bitSet1.get(0,3).toLongArray()));
 
 
-       // BitArray bitArray = new BitArray(8,new byte[]{2});
-       // System.out.println(bitArray.length());
-       // System.out.println(bitArray.toString());
+        // BitArray bitArray = new BitArray(8,new byte[]{2});
+        // System.out.println(bitArray.length());
+        // System.out.println(bitArray.toString());
 
-       // bitSet1.previousSetBit(2);
-       // BitSet bitSet2 = BitSet.valueOf(a.getBytes());
-      //  System.out.println(Arrays.toString(a.getBytes()));
-       //   System.out.println(bitSet1.length());
-     //   System.out.println(bitSet2.get(2));
+        // bitSet1.previousSetBit(2);
+        // BitSet bitSet2 = BitSet.valueOf(a.getBytes());
+        //  System.out.println(Arrays.toString(a.getBytes()));
+        //   System.out.println(bitSet1.length());
+        //   System.out.println(bitSet2.get(2));
 
 
-     //   System.out.println(Arrays.toString(bitSet1.toLongArray()));
+        //   System.out.println(Arrays.toString(bitSet1.toLongArray()));
 
       /*  File temp = new File("D:/t11.txt");
         try {
@@ -252,6 +337,7 @@ public class StringToHex {
        // System.out.println(new SecurityUnitFrame().format(string));
         System.out.println("Hex : " + new SecurityUnitFrameFormat(string.replaceAll(" ","").trim()).format());*/
     }
+
     public static String toBinary(int num, int digits) {
         String cover = Integer.toBinaryString(1 << digits).substring(1);
         String s = Integer.toBinaryString(num);
@@ -280,13 +366,100 @@ public class StringToHex {
 
 
     private static String getTimeFromTaskData(String time) {
-        String timeHex = time.substring(34,48);
-        int y = Integer.parseInt(timeHex.substring(0,4),16);
-        int m = Integer.parseInt(timeHex.substring(4,6),16);
-        int d = Integer.parseInt(timeHex.substring(6,8),16);
-        return String.format("%s-%s-%s 0:0:0",y,m,d);
+        String timeHex = time.substring(34, 48);
+        int y = Integer.parseInt(timeHex.substring(0, 4), 16);
+        int m = Integer.parseInt(timeHex.substring(4, 6), 16);
+        int d = Integer.parseInt(timeHex.substring(6, 8), 16);
+        return String.format("%s-%s-%s 0:0:0", y, m, d);
     }
+    public static final class TaskData {
+        /**
+         * 表地址
+         */
+        private String meterAddress;
 
+        public String getMeterAddress() {
+            return meterAddress.trim();
+        }
+
+        /**
+         * 截止时间
+         */
+        private String endTime;
+
+        /**
+         * 第一结算日
+         */
+        private String firstDay;
+        /**
+         * 第2结算日
+         */
+        private String secondDay;
+        /**
+         * 第3结算日
+         */
+        private String thirdDay;
+
+        /**
+         * 客户编号
+         */
+        private String consNo;
+        /**
+         * 充值金额 单位：元，十进制
+         */
+        private String fillMoney;
+        /**
+         * 第3结算日
+         */
+        private String fillNum;
+
+        /**
+         * 终端校时,终端时钟读取,终端数据读取
+         * 终端逻辑地址
+         */
+        private String tmnlLAddr;
+
+        public void setMeterAddress(String meterAddress) {
+            this.meterAddress = meterAddress;
+        }
+
+        public void setEndTime(String endTime) {
+            this.endTime = endTime;
+        }
+
+        public void setFirstDay(String firstDay) {
+            this.firstDay = firstDay;
+        }
+
+        public void setSecondDay(String secondDay) {
+            this.secondDay = secondDay;
+        }
+
+        public void setThirdDay(String thirdDay) {
+            this.thirdDay = thirdDay;
+        }
+
+        public void setConsNo(String consNo) {
+            this.consNo = consNo;
+        }
+
+        public void setFillMoney(String fillMoney) {
+            this.fillMoney = fillMoney;
+        }
+
+        public void setFillNum(String fillNum) {
+            this.fillNum = fillNum;
+        }
+
+        public void setTmnlLAddr(String tmnlLAddr) {
+            this.tmnlLAddr = tmnlLAddr;
+        }
+
+        @Override
+        public String toString() {
+            return new Gson().toJson(this);
+        }
+    }
     private static void format() {
         String safeUnit = "00bbbb021711015401000000000d33000000000000000000ffffffff31675f6c0000000000000000000000000000000000000000000000000000530200000000227b7fff90ffec1f000000000000000000000101223ba99c7d9a3e0a35f809cac79da9db4305d9020da184ca0200803600ff00000000008510000000f00000000000000005e0308205dc06092a864886f70d010702a08205cd308205c90201013100300b06092a864886f70d010701a08205af308202f230820296a00302010202103e0a35f809cac79da9db4305d9020da1300c06082a811ccf5501837505003039310d300b060355040a0c0445505249310d300b060355040b0c04455052493119301706035504030c10434120455052495f574f524b5f534d32301e170d3133303530333032323134315a170d3238303530333032323134315a308186310b300906035504061302434e310b300906035504080c02424a31153013060355040a0c0ce59bbde5aeb6e794b5e7bd91311930170603550405131057543336334d413031455730343030393124302206035504030c1be4b8ade59bbde794b5e58a9be7a791e5ada6e7a094e7a9b6e999a231123010060a0992268993f22c6401010c0230333059301306072a8648ce3d020106082a811ccf5501822d03420004f4ecdc07283d8c831294b1a403a5ba7d546853593c23cd1b1895ef63c1855ebb05e8bc7fda86e34e8ace8bcfd8038a14648e166f6e5869708aca57e7c3239effa382012e3082012a3081890603551d1f048181307f303da03ba0398637687474703a2f2f3231312e38382e32352e37373a393030302f6766612f63726c2f6766616170702e63726c2f534d322f63726c2e63726c303ea03ca03a8638687474703a2f2f3231312e38382e32352e37373a393030302f6766612f63726c2f6766616170702e63726c2f534d322f63726c302e63726c300b0603551d0f0404030206c0301d0603551d0e041604146cdf5f91c11ad8858adbeb68a8fda1e3f040345c30700603551d23046930678014828600620a37c464e2a7960f5049e1adbdf19417a13da43b3039310d300b060355040a0c0445505249310d300b060355040b0c04455052493119301706035504030c10434120455052495f524f4f545f534d3282107bf7a0a8407611ae8e57a227990a66a5300c06082a811ccf55018375050003480030450221001dbd57101ad5ed9c6c36105ca8527d17eb3d41b2c73e0d94b7eb73cfd81371a502208f41f1c56933ee97e3fe57b4d0b6a5d6df20546bc92c8b980a7e26acdcfa2be6308202b530820259a00302010202107bf7a0a8407611ae8e57a227990a66a5300c06082a811ccf5501837505003039310d300b060355040a0c0445505249310d300b060355040b0c04455052493119301706035504030c10434120455052495f524f4f545f534d32301e170d3133303432323033323435305a170d3433303430383033323435305a3039310d300b060355040a0c0445505249310d300b060355040b0c04455052493119301706035504030c10434120455052495f574f524b5f534d323059301306072a8648ce3d020106082a811ccf5501822d034200045a6308227b63235e62446e902741a8671be62ee6721ddaebc9b618c06b2eb92fb94f7f104bbdff9fea23bc3b0db3a281ff811d9a1202bf57e9a59ded9b35227fa382013f3082013b300f0603551d13040830060101ff02010330700603551d230469306780149afd8b64f22b53d39c45144a9629b5beb51ec45aa13da43b3039310d300b060355040a0c0445505249310d300b060355040b0c04455052493119301706035504030c10434120455052495f524f4f545f534d328210312b485ff76a97f50dc64251b6c1346c301d0603551d0e04160414828600620a37c464e2a7960f5049e1adbdf19417300b0603551d0f0404030201fe3081890603551d1f048181307f303da03ba0398637687474703a2f2f3231312e38382e32352e37373a393030302f6766612f63726c2f6766616170702e63726c2f534d322f63726c2e63726c303ea03ca03a8638687474703a2f2f3231312e38382e32352e37373a393030302f6766612f63726c2f6766616170702e63726c2f534d322f63726c302e63726c300c06082a811ccf55018375050003480030450221009be3f87784a7274eb9477fb1ec9f06a1264714ea06320dbc9b0f04dd69804070022074d9024de6fc29ace33a2a54dca690a20ac5931bdfa746669bcb0d7e81de65d0a100310005d6308205d206092a864886f70d010702a08205c3308205bf0201013100300b06092a864886f70d010701a08205a5308202e83082028ca003020102021060acc6d019e08fbf60d9223ba99c7d9a300c06082a811ccf5501837505003039310d300b060355040a0c0445505249310d300b060355040b0c04455052493119301706035504030c10434120455052495f574f524b5f534d32301e170d3137313231333038343033335a170d3332313231333038343033335a307d310b300906035504061302434e31153013060355040a0c0ce59bbde5aeb6e794b5e7bd91310b300906035504080c02424a311930170603550405131035333032303030303030303032323762311b301906035504030c12e59bbde7bd91e8aea1e9878fe4b8ade5bf8331123010060a0992268993f22c6401010c0230343059301306072a8648ce3d020106082a811ccf5501822d0342000483b745b2ad9499d429f131f576ea579865a65959f3cc42a61b8c84ad0d95f613486f96fadb2fbc7c9fa6244ecb6b4e722be10b18117b7bd305795ad1479d645ea382012e3082012a3081890603551d1f048181307f303da03ba0398637687474703a2f2f3231312e38382e32352e37373a393030302f6766612f63726c2f6766616170702e63726c2f534d322f63726c2e63726c303ea03ca03a8638687474703a2f2f3231312e38382e32352e37373a393030302f6766612f63726c2f6766616170702e63726c2f534d322f63726c302e63726c301d0603551d0e0416041447daf0902970d0ac3a2ec5ba45c7c5e0f0047e9530700603551d23046930678014828600620a37c464e2a7960f5049e1adbdf19417a13da43b3039310d300b060355040a0c0445505249310d300b060355040b0c04455052493119301706035504030c10434120455052495f524f4f545f534d3282107bf7a0a8407611ae8e57a227990a66a5300b0603551d0f0404030206c0300c06082a811ccf5501837505000348003045022009d475b8d261adb1c056131dc5b66d804167db0f3be10cc83752c476b2651ed9022100a826565597b96ca2d15f45ba4b0f9aba92d2a879dba85cb625b70d990a8f47ab308202b530820259a00302010202107bf7a0a8407611ae8e57a227990a66a5300c06082a811ccf5501837505003039310d300b060355040a0c0445505249310d300b060355040b0c04455052493119301706035504030c10434120455052495f524f4f545f534d32301e170d3133303432323033323435305a170d3433303430383033323435305a3039310d300b060355040a0c0445505249310d300b060355040b0c04455052493119301706035504030c10434120455052495f574f524b5f534d323059301306072a8648ce3d020106082a811ccf5501822d034200045a6308227b63235e62446e902741a8671be62ee6721ddaebc9b618c06b2eb92fb94f7f104bbdff9fea23bc3b0db3a281ff811d9a1202bf57e9a59ded9b35227fa382013f3082013b300f0603551d13040830060101ff02010330700603551d230469306780149afd8b64f22b53d39c45144a9629b5beb51ec45aa13da43b3039310d300b060355040a0c0445505249310d300b060355040b0c04455052493119301706035504030c10434120455052495f524f4f545f534d328210312b485ff76a97f50dc64251b6c1346c301d0603551d0e04160414828600620a37c464e2a7960f5049e1adbdf19417300b0603551d0f0404030201fe3081890603551d1f048181307f303da03ba0398637687474703a2f2f3231312e38382e32352e37373a393030302f6766612f63726c2f6766616170702e63726c2f534d322f63726c2e63726c303ea03ca03a8638687474703a2f2f3231312e38382e32352e37373a393030302f6766612f63726c2f6766616170702e63726c2f534d322f63726c302e63726c300c06082a811ccf55018375050003480030450221009be3f87784a7274eb9477fb1ec9f06a1264714ea06320dbc9b0f04dd69804070022074d9024de6fc29ace33a2a54dca690a20ac5931bdfa746669bcb0d7e81de65d0a1003100";
         // System.out.println(new SecurityUnitFrame().format(safeUnit));

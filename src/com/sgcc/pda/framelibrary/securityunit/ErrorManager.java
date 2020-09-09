@@ -15,10 +15,39 @@ import java.util.Stack;
 public class ErrorManager {
 
     public static void main(String[] args) {
-        //  getErrorMessage(0x010000f1);
-       //  System.out.println( getErrorMessage(0x00010000));
+         System.out.println( hexStr2Str("723160c52069643d31266167653d32266e616d653d33"));
+         System.out.println( convertHexToString("723160c52069643d31266167653d32266e616d653d33"));
+    }
+    public static String convertHexToString(String hex) {
 
+        StringBuilder sb = new StringBuilder();
+        StringBuilder temp = new StringBuilder();
+        // 49204c6f7665204a617661 split into two characters 49, 20, 4c...
+        for (int i = 0; i < hex.length() - 1; i += 2) {
+            // grab the hex in pairs
+            String output = hex.substring(i, (i + 2));
+            // convert hex to decimal
+            int decimal = Integer.parseInt(output, 16);
+            // convert the decimal to character
+            sb.append((char) decimal);
+            temp.append(decimal);
+        }
 
+        return sb.toString();
+    }
+
+    public static String hexStr2Str(String hexStr) {
+        String str = "0123456789ABCDEF";
+        char[] hexs = hexStr.toCharArray();
+        byte[] bytes = new byte[hexStr.length() / 2];
+
+        for(int i = 0; i < bytes.length; ++i) {
+            int n = str.indexOf(hexs[2 * i]) * 16;
+            n += str.indexOf(hexs[2 * i + 1]);
+            bytes[i] = (byte)(n & 255);
+        }
+
+        return new String(bytes);
     }
     /**
      * 主站错误类型

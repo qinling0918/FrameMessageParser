@@ -1,10 +1,19 @@
 package com.sgcc.pda.plugin;
 
 import com.sgcc.pda.framelibrary.protocol698.Frame698;
+import com.sgcc.pda.framelibrary.protocol698.apdu.APDUParser;
+import com.sgcc.pda.framelibrary.protocol698.apdu.ActionAPDUParser;
+import com.sgcc.pda.framelibrary.protocol698.apdu.GetAPDUParser;
+import com.sgcc.pda.framelibrary.protocol698.apdu.SetAPDUParser;
 import com.sgcc.pda.framelibrary.utils.TextUtils;
 
 import javax.swing.*;
 import java.awt.event.*;
+
+import static com.sgcc.pda.framelibrary.protocol698.apdu.APDU.GET_RESPONSE;
+import static com.sgcc.pda.framelibrary.protocol698.apdu.ActionAPDUParser.ACTION_RESPONSE;
+import static com.sgcc.pda.framelibrary.protocol698.apdu.GetAPDUParser.PARSER_SUCCESS;
+import static com.sgcc.pda.framelibrary.protocol698.apdu.SetAPDUParser.SET_RESPONSE;
 
 public class FrameParserDialog extends JDialog {
     private JPanel contentPane;
@@ -55,10 +64,51 @@ public class FrameParserDialog extends JDialog {
 
     private void onOK() {
         // add your code here
-        String frameStr = etFrame.getText();
-        String formatFrameStr =TextUtils.isEmpty(frameStr)? "请先输入帧报文":new Frame698().format(frameStr);
+        String frameStr = etFrame.getText().trim();
+
+        String formatResult = "";
+        Frame698.Parser parser = new Frame698.Parser(frameStr);
+        if (parser.parseCode==0){
+            formatResult = parser.toFormatString();
+            String apdu = parser.getLinkDataStr();
+            String apduformatResult = formatApdu(apdu);
+            formatResult = TextUtils.isEmpty(apduformatResult) ? formatResult : formatResult + "\n" + apduformatResult;
+        }else{
+            //直接当成链路层解析
+            formatResult = formatApdu(frameStr);
+        }
+
+        String formatFrameStr = TextUtils.isEmpty(frameStr) ? "请先输入帧报文" : formatResult;
+
         etFormatFrame.setText(formatFrameStr);
         // dispose();
+    }
+
+    private String formatApdu(String serverApdu) {
+        if (TextUtils.isEmpty(serverApdu)) {
+            return "";
+        }
+        int classify = Integer.parseInt(serverApdu.substring(0, 2), 16);
+        APDUParser parser = null;
+        switch (classify) {
+            case GET_RESPONSE:
+                parser = new GetAPDUParser(serverApdu);
+                break;
+            case ACTION_RESPONSE:
+                parser = new ActionAPDUParser(serverApdu);
+                break;
+            case SET_RESPONSE:
+                parser = new SetAPDUParser(serverApdu);
+                break;
+            default:
+                parser = APDUParser.ERROR_PARSER(APDUParser.ParseResult.ERROR_PARSER_NOT_MATCH);
+                break;
+        }
+        if (parser.parseCode == PARSER_SUCCESS) {
+            return parser.toFormatString();
+        }
+        return "";
+
     }
 
     private void onCancel() {

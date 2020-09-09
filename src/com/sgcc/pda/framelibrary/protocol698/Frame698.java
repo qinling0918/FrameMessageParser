@@ -51,7 +51,7 @@ public class Frame698 implements Cloneable, IFrame {
     // 11	服务器对客户机请求的响应
     private final int dir_prm;
     // 是否分帧  int frameSeparateFlag = isFrameSeparate ? 1: 0
-    private final boolean isFrameSeparate;//0：不请求，1：请求
+    private final boolean isFrameSeparate;//0：不分帧，1：分帧
     // 扰码标志 int sc = isScrambling ? 1:0;
     private final boolean isScrambling;//0：不请求，1：请求
     // 功能码  1	链路管理	链路连接管理（登录，心跳，退出登录）
